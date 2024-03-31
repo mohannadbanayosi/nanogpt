@@ -47,6 +47,8 @@ def get_batch(split):
     x, y =x.to(device), y.to(device) # in case of running on gpu
     return x, y
 
+# Using this context manager to tell pytorch that we don't want to call .backward() for this
+# since we don't want to store all intermediate variables -> mem efficiency
 @torch.no_grad()
 def estimate_loss():
     final_losses = {}
