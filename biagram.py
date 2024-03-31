@@ -132,10 +132,12 @@ class Block(nn.Module):
         head_size = n_embd // n_head
         self.sa = MultiHeadAttention(n_head, head_size)
         self.ffwd = FeedForward(n_embd)
+        self.ln1 = nn.LayerNorm(n_embd)
+        self.ln2 = nn.LayerNorm(n_embd)
     
     def forward(self, x):
-        x = x + self.sa(x)
-        x = x + self.ffwd(x)
+        x = x + self.sa(self.ln1(x))
+        x = x + self.ffwd(self.ln2(x))
         return x
 
 
@@ -150,6 +152,7 @@ class BigramLanguageModel(nn.Module):
             Block(n_embd, n_head=4),
             Block(n_embd, n_head=4),
             Block(n_embd, n_head=4),
+            nn.LayerNorm(n_embd)
         )
 
         # TODO: check why linear model
@@ -215,6 +218,7 @@ for iter in range(max_iters):
     loss.backward()
     optimizer.step()
 
+print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
 
 print("\ngenerated text:")
