@@ -4,15 +4,15 @@ from torch.nn import functional as F
 
 
 # Hyperparameters
-batch_size = 32 # how many independent sequences will we process in parallel?
+batch_size = 16 # how many independent sequences will we process in parallel?
 block_size = 32 # what is the maximum context length for predictions?
 max_iters = 5000
 eval_interval = 300
 learning_rate = 1e-3  # TODO: understand this
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 eval_iters = 200
-n_embd = 64
-n_head = 8
+n_embd = 128
+n_head = 16
 n_layer = 4
 dropout = 0.2
 
@@ -199,29 +199,44 @@ class BigramLanguageModel(nn.Module):
 
 m = BigramLanguageModel()
 model = m.to(device) # in case of running on gpu
+print(sum(p.numel() for p in m.parameters())/1e6, 'M parameters')
 
-# create a PyTorch optimizer
-# TODO: try SGD
-# TODO: play around with the learning rate
-optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
-for iter in range(max_iters):
-    # every once in a while evaluate the loss on train and val sets
-    if iter % eval_interval == 0:
-        losses = estimate_loss()
-        print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+def train():
+    # create a PyTorch optimizer
+    # TODO: try SGD
+    # TODO: play around with the learning rate
+    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
-    # sample a batch of data
-    xb, yb = get_batch('train')
+    for iter in range(max_iters):
+        # every once in a while evaluate the loss on train and val sets
+        if iter % eval_interval == 0:
+            losses = estimate_loss()
+            print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
 
-    # evaluate the loss
-    logits, loss = model(xb, yb)
-    optimizer.zero_grad(set_to_none=True)
-    loss.backward()
-    optimizer.step()
+        # sample a batch of data
+        xb, yb = get_batch('train')
 
-print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
-context = torch.zeros((1, 1), dtype=torch.long, device=device)
+        # evaluate the loss
+        logits, loss = model(xb, yb)
+        optimizer.zero_grad(set_to_none=True)
+        loss.backward()
+        optimizer.step()
 
-print("\ngenerated text:")
-print(decode(model.generate(context, max_new_tokens=500)[0].tolist()))
+    torch.save(model.state_dict(), 'my_model.pth')
+        
+    print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+
+def eval():
+    # Load the saved model parameters
+    model.load_state_dict(torch.load('my_model.pth'))
+    model.eval()  # Set the model to evaluation mode
+
+    context = torch.zeros((1, 1), dtype=torch.long, device=device)
+
+    print("\ngenerated text:")
+    print(decode(model.generate(context, max_new_tokens=2000)[0].tolist()))
+
+
+if __name__ == "__main__":
+    train()
