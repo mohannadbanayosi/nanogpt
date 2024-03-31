@@ -43,8 +43,25 @@ def get_batch(split):
     ix = torch.randint(len(data) - block_size, (batch_size,))
     x = torch.stack([data[i:i+block_size] for i in ix])
     y = torch.stack([data[i+1:i+block_size+1] for i in ix])
-    x, y =x.to(device), y.to(device)
+    x, y =x.to(device), y.to(device) # in case of running on gpu
     return x, y
+
+@torch.no_grad()
+def estimate_loss():
+    final_losses = {}
+    model.eval()
+
+    for split in ["train", "val"]:
+        losses = torch.zeros(eval_iters)
+        for k in range(eval_iters):
+            X, Y = get_batch(split)
+            logits, loss = model(X, Y)
+            losses[k] = loss.item()
+        final_losses[split] = losses.mean()
+
+    model.train()
+    return final_losses
+
 
 class BigramLanguageModel(nn.Module):
 
@@ -82,14 +99,15 @@ class BigramLanguageModel(nn.Module):
             idx = torch.cat((idx, idx_next), dim=1) # (B, T+1)
         return idx
 
-model = BigramLanguageModel(vocab_size)
+m = BigramLanguageModel(vocab_size)
+model = m.to(device) # in case of running on gpu
 
 # create a PyTorch optimizer
 # TODO: try SGD
 # TODO: play around with the learning rate
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
-for steps in range(max_iters): # increase number of steps for good results...
+for iter in range(max_iters):
     # sample a batch of data
     xb, yb = get_batch('train')
 
