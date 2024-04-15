@@ -78,6 +78,6 @@ for iter in range(max_iters):
     optimizer.step()
 
 val_loss = "{:.4f}".format(losses['val']).replace(".", "")
-torch.save(model.state_dict(), f"model_{int(time.time())}_{val_loss}.pth")
+torch.save(model.state_dict(), f"model_resources/model_{int(time.time())}_{val_loss}.pth")
     
 print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
