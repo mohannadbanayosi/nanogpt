@@ -1,5 +1,6 @@
 import time
 import torch
+from tqdm import tqdm
 
 from model import BLMConfig, BigramLanguageModel
 
@@ -30,6 +31,7 @@ val_data = data[n:]
 
 print(f"{len(train_data)=}", f"{len(val_data)=}")
 
+# TODO: add default model config for different model sizes
 config = BLMConfig(vocab_size=vocab_size, device="mps" if torch.backends.mps.is_available() else "cpu")
 m = BigramLanguageModel(config)
 model = m.to(config.device)
@@ -65,17 +67,19 @@ def estimate_loss():
 # TODO: try SGD
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
-for iter in range(max_iters):
-    if iter % eval_interval == 0:
-        losses = estimate_loss()
-        print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+with tqdm(total=max_iters, desc=f"batch size={batch_size}") as pbar:
+    for iter in range(max_iters):
+        if iter % eval_interval == 0:
+            losses = estimate_loss()
+            print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
 
-    xb, yb = get_batch('train')
+        xb, yb = get_batch('train')
 
-    logits, loss = model(xb, yb)
-    optimizer.zero_grad(set_to_none=True)
-    loss.backward()
-    optimizer.step()
+        logits, loss = model(xb, yb)
+        optimizer.zero_grad(set_to_none=True)
+        loss.backward()
+        optimizer.step()
+        pbar.update(1)
 
 val_loss = "{:.4f}".format(losses['val']).replace(".", "")
 torch.save(model.state_dict(), f"model_resources/model_{int(time.time())}_{val_loss}.pth")
