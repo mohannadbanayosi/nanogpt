@@ -1,3 +1,4 @@
+import time
 import torch
 
 from model import BLMConfig, BigramLanguageModel
@@ -76,6 +77,7 @@ for iter in range(max_iters):
     loss.backward()
     optimizer.step()
 
-torch.save(model.state_dict(), 'my_model.pth')
+val_loss = "{:.4f}".format(losses['val']).replace(".", "")
+torch.save(model.state_dict(), f"model_{int(time.time())}_{val_loss}.pth")
     
 print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
