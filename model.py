@@ -24,6 +24,7 @@ class MultiHeadAttention(nn.Module):
         self.dropout = nn.Dropout(config.dropout)
     
     def forward(self, x):
+        # apply multiple attention of the individual heads and concatenate them
         out = torch.cat([h(x) for h in self.heads], dim=-1)
         out = self.dropout(self.projection(out))
         return out
@@ -83,14 +84,14 @@ class Block(nn.Module):
     def __init__(self, config):
         super().__init__()
         head_size = config.n_embd // config.n_head
-        self.sa = MultiHeadAttention(config, head_size)
-        self.ffwd = FeedForward(config)
-        self.ln1 = nn.LayerNorm(config.n_embd)
-        self.ln2 = nn.LayerNorm(config.n_embd)
+        self.multi_headed_attention = MultiHeadAttention(config, head_size)
+        self.feed_forward = FeedForward(config)
+        self.layer_norm_1 = nn.LayerNorm(config.n_embd)
+        self.layer_norm_2 = nn.LayerNorm(config.n_embd)
     
     def forward(self, x):
-        x = x + self.sa(self.ln1(x))
-        x = x + self.ffwd(self.ln2(x))
+        x = x + self.multi_headed_attention(self.layer_norm_1(x))
+        x = x + self.feed_forward(self.layer_norm_2(x))
         return x
 
 
