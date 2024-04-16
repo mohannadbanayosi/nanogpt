@@ -18,7 +18,7 @@ pip3 install --pre torch torchvision torchaudio --index-url https://download.pyt
 
 ## Train
 
-The model is configured to train on text under [input.txt](input.txt), which is a copy of [tinyshakespeare](https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt). Feel free to replace the training dataset with anything else.
+The model is configured to train on text under [input.txt](data/input.txt), which is a copy of [tinyshakespeare](https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt). Feel free to replace the training dataset with anything else.
 
 ```bash
 python train.py
